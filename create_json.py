@@ -1,5 +1,6 @@
 import os
 import json
+from pathlib import Path
 
 # Example JSON data
 data = {
@@ -17,9 +18,15 @@ def count_files_in_directory(directory_path):
 
     return file_count
 
-def save_json(data):
+def save_json(data , genesis = False):
     dir_list = os.listdir("nodes")
     print(dir_list)
+    if genesis:
+        file_path = f"nodes/{dir_list[0]}/GenesisBlock.json"
+        path = Path(file_path)
+        if path.exists():
+            print("GenesisBlock is available")
+            return
     for dir in dir_list:
         directory_path = f"nodes/{dir}"
         num_files = count_files_in_directory(directory_path=directory_path)

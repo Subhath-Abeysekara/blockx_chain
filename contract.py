@@ -4,6 +4,7 @@ from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives.asymmetric.utils import Prehashed
 from cryptography.hazmat.primitives import serialization
 
+from main import get_balance, get_chain_by_node
 from make_directory import make_node, check_node_availability
 
 
@@ -90,11 +91,12 @@ def log_user(private_key):
         public_key_lines = public_pem_str.splitlines()
         public_key_base64 = ''.join(public_key_lines[1:-1])
         print(public_key_base64)
+        balance = get_balance(public_key=public_key_base64)
         response = {
             'state': check_node_availability(public_key_base64),
             "public_key":public_key_base64,
-            "donated_tokens":10,
-            "minted_tokens":20
+            "donated_tokens":balance['donated_token'],
+            "minted_tokens":balance['minted_tokens']
         }
         return response
     except Exception as e:
@@ -111,9 +113,9 @@ def transfer_tokens(data):
         public_key = data[1]
         signature = data[0]
         public_key_pem = f"""
-        -----BEGIN EC PRIVATE KEY-----
-        {public_key}
-        -----END EC PRIVATE KEY-----
+-----BEGIN PUBLIC KEY-----
+{public_key}
+-----END PUBLIC KEY-----
                     """
         public_key = serialization.load_pem_public_key(
             public_key_pem.encode('utf-8'),
@@ -128,10 +130,11 @@ def transfer_tokens(data):
                 hash_value,
                 ec.ECDSA(Prehashed(hashes.SHA256()))
             )
+            balance = get_balance(public_key=public_key)
             response = {
                 'state': True,
-                "donated_tokens": 10,
-                "minted_tokens": 20
+                "donated_tokens": balance['donated_token'],
+                "minted_tokens": balance['minted_tokens']
             }
             return response
         except Exception as e:
@@ -146,6 +149,19 @@ def transfer_tokens(data):
             'error': str(e)
         }
         return response
+
+def get_chain(public_key):
+    try:
+        chain = get_chain_by_node(public_key)
+        return {
+            "state":True,
+            "chain":chain
+        }
+    except Exception as e:
+        return {
+            "state":False,
+            "error":str(e)
+        }
 
 
 
