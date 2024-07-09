@@ -95,8 +95,8 @@ def log_user(private_key):
         response = {
             'state': check_node_availability(public_key_base64),
             "public_key":public_key_base64,
-            "donated_tokens":balance['donated_token'],
-            "minted_tokens":balance['minted_tokens']
+            "donated_tokens":balance['donated'],
+            "minted_tokens":balance['minted']
         }
         return response
     except Exception as e:
@@ -133,8 +133,8 @@ def transfer_tokens(data):
             balance = get_balance(public_key=public_key)
             response = {
                 'state': True,
-                "donated_tokens": balance['donated_token'],
-                "minted_tokens": balance['minted_tokens']
+                "donated_tokens": balance['donated'],
+                "minted_tokens": balance['minted']
             }
             return response
         except Exception as e:

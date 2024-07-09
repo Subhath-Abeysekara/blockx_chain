@@ -1,6 +1,9 @@
 import os
 import shutil
 
+import env
+
+
 def copy_chain_to_node(public_key):
     dir_list = os.listdir("nodes")
     dir_list.remove(public_key)
@@ -19,6 +22,12 @@ def make_node(public_key):
     print(f"Directory '{directory_path}' created successfully")
     copy_chain_to_node(public_key)
 
+def make_system_node():
+    public_key = env.system_account.replace("/", "")
+    directory_path = f"nodes/{public_key}"
+    if not os.path.isdir(directory_path):
+        os.mkdir(directory_path)
+        print(f"Directory '{directory_path}' created successfully")
 
 def check_node_availability(public_key):
     public_key = public_key.replace("/", "")

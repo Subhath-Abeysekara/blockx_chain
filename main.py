@@ -63,7 +63,7 @@ class Blockchain:
         new_block.previous_hash = self.get_latest_block().hash
         new_block.hash = new_block.calculate_hash()
         print(new_block)
-        return new_block
+        return json.dumps(new_block.__dict__)
 
     def add_block(self, new_block):
         new_block_json = json.dumps(new_block.__dict__)
@@ -87,13 +87,15 @@ def do_initial_transaction(my_blockchain , data):
     try:
         data = validate_inputs(Transaction_Data(), data)
         data['transferer_balnce'] = get_balance(public_key=data['transferer_public_key'])
-        data['transferer_balnce']['minted_tokens']-=data['transfer_amount']
-        data['transferer_balnce']['donated_token']+= data['transfer_amount']
+        data['transferer_balnce']['minted']-=data['transfer_amount']
+        data['transferer_balnce']['donated']+= data['transfer_amount']
         data['reciever_balnce'] = get_balance(public_key=data['reciever_public_key'])
-        data['reciever_balnce']['minted_tokens']+= data['transfer_amount']
+        data['reciever_balnce']['minted']+= data['transfer_amount']
         my_blockchain.add_block(Block(time.time(), json.dumps(data), my_blockchain.get_latest_block().hash))
+        time.sleep(2)
         response = {
             'state': True,
+            'balnce':get_balance(data['reciever_public_key'])
         }
         return response
     except Exception as e:
@@ -136,22 +138,16 @@ def get_balance(public_key):
             print(data['transferer_public_key'])
             print(data['reciever_public_key'])
             if data['transferer_public_key'] == public_key:
-                balance = {
-                    "minted_tokens": data['transferer_minted_token_balance'],
-                    "donated_token": data['transferer_donated_token_balance']
-                }
+                balance = data['transferer_balnce']
                 return balance
             elif data['reciever_public_key'] == public_key:
-                balance = {
-                    "minted_tokens": data['reciever_minted_token_balance'],
-                    "donated_token": data['reciever_donated_token_balance']
-                }
+                balance = data['reciever_balnce']
                 return balance
         except Exception as e:
             print(e)
             balance = {
-                "minted_tokens": 0,
-                "donated_token": 0
+                "minted": 0,
+                "donated": 0
             }
             return balance
 
@@ -162,13 +158,13 @@ def do_transaction(my_blockchain , data):
         data = json.loads(json_string)
         data = validate_inputs(Transaction_Data(), data)
         data['transferer_balnce'] = get_balance(public_key=data['transferer_public_key'])
-        data['transferer_balnce']['minted_tokens'] -= data['transfer_amount']
-        data['transferer_balnce']['donated_token'] += data['transfer_amount']
+        data['transferer_balnce']['minted'] -= data['transfer_amount']
+        data['transferer_balnce']['donated'] += data['transfer_amount']
         data['reciever_balnce'] = get_balance(public_key=data['reciever_public_key'])
-        data['reciever_balnce']['minted_tokens'] += data['transfer_amount']
+        data['reciever_balnce']['minted'] += data['transfer_amount']
         response = {
             'state': True,
-            "block":my_blockchain.get_latest_block(Block(time.time(), json.dumps(data), my_blockchain.get_latest_block().hash))
+            "block":my_blockchain.get_block_data(Block(time.time(), json.dumps(data), my_blockchain.get_latest_block().hash))
         }
         return response
     except Exception as e:
@@ -196,10 +192,10 @@ def get_chain_by_node(public_key):
 # Check if the blockchain is valid
 # is_valid = my_blockchain.is_chain_valid()
 # print(f"Is the blockchain valid? {is_valid}")
-transferer_public_key = "MFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAEf9Sl4SgieBlB9tQEWwEe3WBp4kvu093xXl6QKnOLo5cWb0wIxiCstxz4zvpx6VB8+2ChN2RFIQSqPEjc4dnOqA=="
-reciever_public_key = "MFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAEf9Sl4SgieBlB9tQEWwEe3WBp4kvu093xXl6QKnOLo5cWb0wIxiCstxz4zvpx6VB8+2ChN2RFIQSqPEjc4dnOqA=="
-
-# balance = get_balance(transferer_public_key)
+# transferer_public_key = "MFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAEf9Sl4SgieBlB9tQEWwEe3WBp4kvu093xXl6QKnOLo5cWb0wIxiCstxz4zvpx6VB8+2ChN2RFIQSqPEjc4dnOqA=="
+# reciever_public_key = "MFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAEf9Sl4SgieBlB9tQEWwEe3WBp4kvu093xXl6QKnOLo5cWb0wIxiCstxz4zvpx6VB8+2ChN2RFIQSqPEjc4dnOqA=="
+#
+# balance = get_balance("MFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAE5TeoeEpCC+V0BXdjaUnRtd0phNdbSO/TrzCk4g1rSDrTdB0oOLVY0vUWGlllgi68hnwbPDSrbroTPRz8wcqZdw==")
 # print(balance)
 # public_key = "MFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAEwhYr+Ggz0xDTS1Q4SYdoSwgHxdz22OPBETsJUcS6eCi4eG9NDva0xDzDLlNThS0JicPf05CyKVdXfjDZ153wKw=="
 # get_chain_by_node(public_key)

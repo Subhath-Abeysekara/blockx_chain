@@ -1,13 +1,17 @@
 import ast
 import json
 import socket
+import time
 
 from env import system_account
 from excute_text_code import execute_contract_code
 from main import Blockchain, do_transaction, do_initial_transaction
+from make_directory import make_system_node
 from schemas.data_schema import Data
 from select_random_nodes import select_nodes
 from validate_data.validate_data import validate_inputs
+make_system_node()
+time.sleep(2)
 my_blockchain = Blockchain()
 
 def send_all(sock, data):
