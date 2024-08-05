@@ -10,6 +10,8 @@ from make_directory import make_system_node
 from schemas.data_schema import Data
 from select_random_nodes import select_nodes
 from validate_data.validate_data import validate_inputs
+from validate_pem_file import validate_pem_file
+
 make_system_node()
 time.sleep(2)
 my_blockchain = Blockchain()
@@ -31,7 +33,7 @@ def start_server():
     print(f"Server listening on {host}:{port}")
     while True:
         client_socket, addr = server_socket.accept()
-        data = client_socket.recv(1024).decode('utf-8')
+        data = client_socket.recv(4096).decode('utf-8')
         print(f"Received message: {data}")
         message_dict = ast.literal_eval(data)
         print(f"Decoded dictionary: {message_dict}")
@@ -39,48 +41,57 @@ def start_server():
             validate_inputs(Data(), message_dict)
             headers = message_dict['headers']
             data = message_dict['data']
-            contract_id = data['contract_id']
-            method = headers['method']
-            try:
-                if method == "transfer_tokens":
-                    parameters = [data['parameters']['signature'], data['parameters']['public_key'],
-                                  data['parameters']['transaction_data']]
-                    print(parameters)
-                    response = execute_contract_code(contract_id, method, parameters)
-                    print("response",response)
-                    if response['state']:
-                        response = do_transaction(my_blockchain, data)
-                elif method == "store_block":
-                    block = data['parameters']['block']
-                    print(block)
-                    my_blockchain.add_block(new_block=block)
+            pem_data = data['pem_data'].encode('utf-8')
+            pem_validation = validate_pem_file(pem_data)
+            print(pem_validation)
+            if pem_validation['state']:
+                contract_id = pem_validation['contract_id']
+                method = headers['method']
+                try:
+                    if method == "transfer_tokens":
+                        parameters = [data['parameters']['signature'], data['parameters']['public_key'],
+                                      data['parameters']['transaction_data']]
+                        print(parameters)
+                        response = execute_contract_code(contract_id, method, parameters)
+                        print("response", response)
+                        if response['state']:
+                            response = do_transaction(my_blockchain, data)
+                    elif method == "store_block":
+                        block = data['parameters']['block']
+                        print(block)
+                        my_blockchain.add_block(new_block=block)
+                        response = {
+                            "state": True
+                        }
+                        print("response", response)
+                        if response['state']:
+                            response = do_transaction(my_blockchain, data)
+                    elif method == "log_user" or method == "get_chain":
+                        parameters = data['parameters']
+                        print(parameters)
+                        response = execute_contract_code(contract_id, method, parameters)
+                    elif method == "select_nodes":
+                        print(data['parameters']['public_key'])
+                        response = select_nodes(data['parameters']['public_key'])
+                        print(response)
+                    else:
+                        response = execute_contract_code(contract_id, method)
+                        data = {
+                            "transferer_public_key": system_account,
+                            "reciever_public_key": response['public_key'],
+                            "transfer_amount": 100
+                        }
+                        response_ = do_initial_transaction(my_blockchain=my_blockchain, data=data)
+                        print(response_)
+                except Exception as e:
                     response = {
-                        "state":True
+                        'state': False,
+                        'error': str(e)
                     }
-                    print("response",response)
-                    if response['state']:
-                        response = do_transaction(my_blockchain, data)
-                elif method == "log_user" or method == "get_chain":
-                    parameters = data['parameters']
-                    print(parameters)
-                    response = execute_contract_code(contract_id, method, parameters)
-                elif method == "select_nodes":
-                    print(data['parameters']['public_key'])
-                    response = select_nodes(data['parameters']['public_key'])
-                    print(response)
-                else:
-                    response = execute_contract_code(contract_id, method)
-                    data = {
-                                "transferer_public_key": system_account,
-                                "reciever_public_key": response['public_key'],
-                                "transfer_amount": 100
-                    }
-                    response_ = do_initial_transaction(my_blockchain=my_blockchain , data=data)
-                    print(response_)
-            except Exception as e:
+            else:
                 response = {
                     'state': False,
-                    'error': str(e)
+                    'error': 'invalid pem file'
                 }
             response_data = json.dumps(response).encode('utf-8')
             print(response_data)

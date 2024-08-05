@@ -1,5 +1,5 @@
 def execute_contract_code(contract_id, method, *parameters):
-    with open(f'{contract_id}.txt', 'r') as file:
+    with open(f'contracts/{contract_id}.txt', 'r') as file:
         function_code = file.read()
     exec(function_code, globals())
     if method in globals():
